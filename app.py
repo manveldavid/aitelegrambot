@@ -12,11 +12,6 @@ tgBotPollPeriodSeconds = float(os.environ.get('BOT_POLL_PERIOD_SECONDS'))
 huggingfacetoken = os.environ.get('ACCESS_TOKEN')
 huggingfacemodel = os.environ.get('MODEL')
 
-async def handle_message(bot, chat_id, message, agent):
-    await bot.send_chat_action(chat_id=chat_id , action = constants.ChatAction.TYPING)
-    result = agent.run(message)
-    await bot.send_message(chat_id=chat_id, text=result)
-
 async def main():
     agent = CodeAgent(tools=[DuckDuckGoSearchTool()], model=HfApiModel(model_id=huggingfacemodel, token=huggingfacetoken))
     bot = Bot(token=telegramtoken)
@@ -30,7 +25,9 @@ async def main():
             for update in updates:
                 if update.message and update.message.text:
                     offset = update.update_id + 1
-                    await handle_message(bot, update.message.chat.id, update.message.text, agent)
+                    await bot.send_chat_action(chat_id=update.message.chat.id , action = constants.ChatAction.TYPING)
+                    result = agent.run(update.message.text)
+                    await bot.send_message(chat_id=update.message.chat.id, text=result, reply_to_message_id=update.message.id)
 
             await asyncio.sleep(tgBotPollPeriodSeconds)
 
